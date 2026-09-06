@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}CourtVision{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="navbar container" aria-label="Main navigation">
+        <a class="brand" href="{{ url_for('index') }}" aria-label="CourtVision home">
+          <img src="{{ url_for('static', filename='courtvision-logo.svg') }}" alt="CourtVision logo" class="brand-logo">
+          <span>CourtVision</span>
+        </a>
+        <div class="nav-links">
+          <a href="{{ url_for('index') }}">Home</a>
+          <a href="{{ url_for('explore') }}">Explore Players</a>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <span>Jesus Mariano</span>
+        <span>IT401 — Assignment 1</span>
+        <span>{{ year }}</span>
+      </div>
+    </footer>
+  </body>
+</html>

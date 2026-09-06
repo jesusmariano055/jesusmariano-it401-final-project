@@ -1,11 +1,43 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>IT401 Project</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <h1>It works!</h1>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}CourtVision{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <div class="container hero-inner">
+      <div class="hero-copy">
+        <p class="eyebrow">NBA intelligence platform</p>
+        <h1>CourtVision</h1>
+        <p class="tagline">Turn NBA data into player-evaluation and game-strategy insight.</p>
+        <p class="description">
+          CourtVision collects NBA player and team performance data, organizes it, and produces explainable insights
+          to help analysts evaluate players and prepare for matchups.
+        </p>
+        <p class="student-name">Student: Jesus Mariano</p>
+        <div class="cta-row">
+          <a class="primary-button" href="{{ url_for('explore') }}">Explore Players</a>
+        </div>
+      </div>
+
+      <div class="hero-visual" aria-label="CourtVision logo illustration">
+        <svg viewBox="0 0 220 220" class="hero-logo" role="img" aria-label="CourtVision logo">
+          <defs>
+            <linearGradient id="bgGradient" x1="0" x2="1" y1="0" y2="1">
+              <stop offset="0%" stop-color="#12233f"/>
+              <stop offset="100%" stop-color="#1a2d52"/>
+            </linearGradient>
+          </defs>
+          <rect x="10" y="10" width="200" height="200" rx="42" fill="url(#bgGradient)"/>
+          <circle cx="116" cy="103" r="52" fill="#F7A52C"/>
+          <circle cx="116" cy="103" r="40" fill="none" stroke="#12233f" stroke-width="7"/>
+          <path d="M129 78C149 78 165 94 165 114" stroke="#12233f" stroke-width="10" stroke-linecap="round"/>
+          <path d="M85 139L142 81" stroke="#12233f" stroke-width="10" stroke-linecap="round"/>
+          <path d="M88 107C93 84 108 70 126 70" stroke="#12233f" stroke-width="10" stroke-linecap="round"/>
+          <circle cx="116" cy="103" r="8" fill="#12233f"/>
+          <circle cx="168" cy="154" r="24" fill="none" stroke="#F7A52C" stroke-width="10"/>
+          <path d="M161 147L195 181" stroke="#F7A52C" stroke-width="12" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+{% endblock %}

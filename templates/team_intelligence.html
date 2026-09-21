@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Team Intelligence | CourtVision{% endblock %}
+
+{% block content %}
+  <section class="page-shell">
+    <div class="container intelligence-shell">
+      <div class="results-header intelligence-heading">
+        <div>
+          <p class="eyebrow">External data lab</p>
+          <h1>Team Intelligence</h1>
+          <p class="description">Select an NBA team to combine structured roster information with public team context in one explainable report.</p>
+        </div>
+      </div>
+
+      <section class="filter-panel team-selector" aria-labelledby="team-selector-title">
+        <h2 id="team-selector-title">Choose a team</h2>
+        <form method="get" action="{{ url_for('team_intelligence') }}" class="team-form">
+          <div class="field-group">
+            <label for="intelligence-team">NBA team</label>
+            <select id="intelligence-team" name="team" required>
+              <option value="">Select a team</option>
+              {% for team in teams %}
+                <option value="{{ team.abbreviation }}" {% if selected_team == team.abbreviation %}selected{% endif %}>{{ team.name }} ({{ team.abbreviation }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="primary-button">Build team report</button>
+        </form>
+        {% if message %}<p class="alert alert-warning" role="alert">{{ message }}</p>{% endif %}
+      </section>
+
+      {% if not report and not message %}
+        <section class="empty-state intelligence-empty">
+          <h2>Start with a team</h2>
+          <p>Your selection controls both external requests. CourtVision will keep each source independent if one is unavailable.</p>
+        </section>
+      {% elif report %}
+        <div class="report-heading">
+          <div>
+            <p class="eyebrow">{{ report.team.conference }} conference · {{ report.team.division }} division</p>
+            <h2>{{ report.team.name }} <span class="team-abbreviation">{{ report.team.abbreviation }}</span></h2>
+          </div>
+          <a class="secondary-link" href="{{ url_for('explore', team=report.team.abbreviation) }}">View local players</a>
+        </div>
+
+        {% if report.errors %}
+          <div class="alert-stack">
+            {% for error in report.errors %}<div class="alert alert-warning" role="status"><strong>{{ error.source }}:</strong> {{ error.message }}</div>{% endfor %}
+          </div>
+        {% endif %}
+
+        <section class="takeaway-panel" aria-labelledby="takeaway-title">
+          <p class="eyebrow">Explainable analysis</p>
+          <h2 id="takeaway-title">Combined CourtVision Takeaway</h2>
+          <p>{{ report.analysis.summary }}</p>
+          <div class="metric-strip">
+            <span><strong>{{ report.analysis.api_player_count }}</strong> API players</span>
+            <span><strong>{{ report.analysis.scraped_roster_count }}</strong> scraped roster records</span>
+            {% for position, count in report.analysis.position_distribution.items() %}<span><strong>{{ count }}</strong> {{ position }}</span>{% endfor %}
+          </div>
+        </section>
+
+        <div class="intelligence-grid">
+          <section class="data-panel" aria-labelledby="api-title">
+            <div class="panel-heading"><div><p class="eyebrow">Structured source · {{ report.api_data.roster_season }}</p><h2 id="api-title">Current API Roster</h2></div><span class="status status-{{ report.api_data.status|replace('_', '-') }}">{{ report.api_data.status|replace('_', ' ') }}</span></div>
+            {% if report.api_data.players %}
+              <div class="record-list">
+                {% for player in report.api_data.players %}<article class="record-card"><h3>{{ player.player_name or 'Unnamed player' }}</h3><p>{{ player.position }} · {{ player.team_abbreviation }}</p><dl><div><dt>Height</dt><dd>{{ player.height }}</dd></div><div><dt>Weight</dt><dd>{{ player.weight }}</dd></div><div><dt>Jersey</dt><dd>{{ player.jersey_number }}</dd></div></dl></article>{% endfor %}
+              </div>
+            {% else %}<p class="muted">{{ report.api_data.message }}</p>{% endif %}
+            {% if report.api_data.source_url %}<a class="source-link" href="{{ report.api_data.source_url }}" target="_blank" rel="noopener">Source: BALDONTLIE API</a>{% endif %}
+          </section>
+
+          <section class="data-panel" aria-labelledby="scraped-title">
+            <div class="panel-heading"><div><p class="eyebrow">Public web source</p><h2 id="scraped-title">Scraped Team Context</h2></div><span class="status status-{{ report.scraped_data.status|replace('_', '-') }}">{{ report.scraped_data.status|replace('_', ' ') }}</span></div>
+            <dl class="context-stats"><div><dt>Season</dt><dd>{{ report.scraped_data.team_context.season }}</dd></div><div><dt>Wins</dt><dd>{{ report.scraped_data.team_context.wins }}</dd></div><div><dt>Losses</dt><dd>{{ report.scraped_data.team_context.losses }}</dd></div><div><dt>Conference</dt><dd>{{ report.scraped_data.team_context.conference }}</dd></div></dl>
+            {% if report.scraped_data.roster %}<div class="compact-table-wrap"><table class="compact-table"><thead><tr><th>Player</th><th>Position</th><th>Height</th></tr></thead><tbody>{% for player in report.scraped_data.roster %}<tr><td>{{ player.player_name }}</td><td>{{ player.position }}</td><td>{{ player.height }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="muted">{{ report.scraped_data.message }}</p>{% endif %}
+            {% if report.scraped_data.source_url %}<a class="source-link" href="{{ report.scraped_data.source_url }}" target="_blank" rel="noopener">Source: Basketball-Reference</a>{% endif %}
+          </section>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

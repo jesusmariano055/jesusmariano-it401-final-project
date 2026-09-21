@@ -46,3 +46,37 @@ def test_explore_min_ppg_filter(client):
     values = [float(value) for value in re.findall(r"(\d+\.\d+)\s+PPG", page)]
     assert values
     assert all(value >= 28 for value in values)
+
+
+def test_team_intelligence_empty_state(client):
+    response = client.get("/team-intelligence")
+    assert response.status_code == 200
+    assert "Start with a team" in response.get_data(as_text=True)
+
+
+def test_team_intelligence_missing_selection_is_controlled(client):
+    response = client.get("/team-intelligence?team=")
+    assert response.status_code == 200
+    assert "Start with a team" in response.get_data(as_text=True)
+
+
+def test_team_intelligence_invalid_team_is_controlled(client):
+    response = client.get("/team-intelligence?team=NOT_A_TEAM")
+    assert response.status_code == 200
+    assert "Please choose an NBA team" in response.get_data(as_text=True)
+
+
+def test_team_intelligence_valid_team_uses_unified_report(client, monkeypatch):
+    monkeypatch.setattr(
+        "routes.main.build_report",
+        lambda team: {
+            "team": team,
+            "api_data": {"status": "not_configured", "players": [], "message": "API unavailable", "source_url": None},
+            "scraped_data": {"status": "success", "team_context": {"season": "2025", "wins": "10", "losses": "5", "conference": "West", "division": "Northwest"}, "roster": [], "message": "", "source_url": "https://www.basketball-reference.com/teams/OKC/"},
+            "analysis": {"summary": "Partial report", "api_player_count": 0, "scraped_roster_count": 0, "position_distribution": {}},
+            "errors": [],
+        },
+    )
+    response = client.get("/team-intelligence?team=OKC")
+    assert response.status_code == 200
+    assert "Partial report" in response.get_data(as_text=True)

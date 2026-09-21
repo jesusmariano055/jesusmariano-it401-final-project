@@ -4,6 +4,8 @@ from pathlib import Path
 
 from flask import render_template, request
 
+from services.team_intelligence_service import build_report
+
 
 def _current_year():
     return datetime.now(timezone.utc).year
@@ -14,6 +16,13 @@ def _load_players(data_dir):
     with data_file.open("r", encoding="utf-8") as file:
         payload = json.load(file)
     return payload.get("players", [])
+
+
+def _load_teams(data_dir):
+    data_file = Path(data_dir) / "nba_teams.json"
+    with data_file.open("r", encoding="utf-8") as file:
+        payload = json.load(file)
+    return payload.get("teams", [])
 
 
 def register_routes(app):
@@ -53,7 +62,6 @@ def register_routes(app):
         if sort_ppg == "desc":
             players = sorted(players, key=lambda player: float(player.get("ppg", 0)), reverse=True)
 
-        teams = sorted({player.get("team") for player in players if player.get("team")})
         positions = ["Guard", "Forward", "Center"]
 
         return render_template(
@@ -66,5 +74,30 @@ def register_routes(app):
             selected_position=position,
             min_ppg=min_ppg,
             sort_ppg=sort_ppg,
+            year=_current_year(),
+        )
+
+    @app.route("/team-intelligence")
+    def team_intelligence():
+        teams = _load_teams(app.config["DATA_DIR"])
+        selected_abbreviation = request.args.get("team", "").strip().upper()
+        report = None
+        message = None
+
+        if selected_abbreviation:
+            selected_team = next(
+                (team for team in teams if team["abbreviation"] == selected_abbreviation), None
+            )
+            if selected_team is None:
+                message = "Please choose an NBA team from the provided list."
+            else:
+                report = build_report(selected_team)
+
+        return render_template(
+            "team_intelligence.html",
+            teams=teams,
+            selected_team=selected_abbreviation,
+            report=report,
+            message=message,
             year=_current_year(),
         )

@@ -1,196 +1,275 @@
-# CourtVision - Jesus Mariano - IT401 - Assignment 2
+# CourtVision — Jesus Mariano — IT401 — Assignment 3
+
+## Project Title
+
+CourtVision — Jesus Mariano — IT401 — Assignment 3
 
 ## Project Overview
 
-CourtVision is a Flask and Jinja2 basketball intelligence prototype for NBA player evaluation and game-strategy analysis. Its target users are analysts, aspiring scouts, coaches, advanced NBA fans, and students who need a structured and explainable way to compare player production, team roles, and public team context.
+CourtVision is a Flask and Jinja2 basketball intelligence prototype for NBA player evaluation and team-strategy analysis. The project keeps the server-rendered architecture from A1/A2 while extending it with persistent saved-player records in MySQL through Flask-SQLAlchemy.
 
-Assignment 1 established a local JSON player explorer. Assignment 2 extends that prototype with a user-selected Team Intelligence workflow that combines structured information from the BALDONTLIE API with public team context scraped from Basketball-Reference. The application remains server-rendered Flask; there is no SPA, relational database, LLM, or paid AI service.
+This A3 version preserves the existing local Explore workflow, the Team Intelligence page, external API integration, scraping integration, and the source-specific failure handling used in Assignment 2. The main A3 addition is explicit persistence for a focused Saved Player Record model that users can create, read, update, and delete through the web interface.
 
-## External Information Sources
+## A1 → A2 → A3 Progression
 
-### BALDONTLIE API
+- A1: local JSON player dataset and filters.
+- A2: team intelligence combining BALDONTLIE and Basketball-Reference data.
+- A3: database-backed saved player records stored in MySQL.
 
-CourtVision calls `GET https://api.balldontlie.io/v1/players` with the selected team's numeric `team_ids[]` value and `per_page=100`. The request uses a bearer-style `Authorization` header populated from `BALDONTLIE_API_KEY`. The service normalizes player ID, name, position, team name, team abbreviation, height, weight, and jersey number.
+## Information Persistence
 
-BALDONTLIE provides structured player records under an API contract. Team Intelligence and Explore use `GET https://api.balldontlie.io/v1/players/active` with `team_ids[]` for current active-roster context. Source attribution is shown when a source URL is available. The active-player endpoint provides identity and roster fields, not the A1 season averages, so those remain separate.
+CourtVision now persists a focused set of player records in MySQL. These records include current roster identity data from BALDONTLIE as well as manually created scouting notes. Saved records survive restarts and are available for search, detail viewing, editing, and delete confirmation without re-calling the external API.
 
-### Basketball-Reference
+The A1 `data/players.json` file remains a local static dataset and is not the application persistence layer. API and scraper results stay independent and unsaved unless the user explicitly chooses to save a player record.
 
-CourtVision requests `https://www.basketball-reference.com/teams/{TEAM_ABBREVIATION}/` using Python `requests`, a descriptive User-Agent, and BeautifulSoup. The scraper safely supports tables that are embedded in HTML comments. It extracts page/team context, roster names, positions, heights, weights, and available metric cells without displaying raw HTML. Basketball-Reference contributes public team-page context and a second roster view for comparison.
+## Database Schema
 
-Source access depends on the public page being reachable and its HTML structure remaining compatible with the parser. The source URL is linked in the dashboard.
+Table name: `saved_player_records`
 
-## API vs. Web Scraping
+Core fields:
 
-An API provides structured JSON through a documented endpoint and query parameters. Web scraping extracts useful structured values from webpage HTML, so it requires defensive selectors and fallback behavior when page markup changes. CourtVision uses the API for structured basketball/player information and scraping for public team context. Both are normalized and presented together in one Team Intelligence report.
+- `id` — integer primary key
+- `name` — required player name
+- `description` — required note or scouting description
+- `source` — provenance label such as `BALDONTLIE` or `Manual`
+- `source_url` — nullable URL for an external source or manual reference
+- `retrieved_at` — UTC timestamp for imported external records
+- `created_at` — UTC timestamp for creation
+- `updated_at` — UTC timestamp for the latest local modification
+- `external_player_id` — nullable BALDONTLIE player identifier
+- `team_name` — team name from source or local validation
+- `team_abbreviation` — normalized NBA team abbreviation
+- `position` — normalized player position
+- `height` — physical measurement value
+- `weight` — physical measurement value
+- `jersey_number` — preserved as a string so values like `00` remain valid
 
-## Application Workflow
+Unique constraint:
+
+- `(source, external_player_id)` for imported BALDONTLIE records
+
+This is a minimal model with no relationship tables. It stores current saved records rather than an authoritative historical roster history.
+
+## Application Architecture
+
+- `app.py` — Flask factory and CLI entry point
+- `config.py` — environment-driven configuration and MySQL URL builder
+- `extensions.py` — shared SQLAlchemy extension instance
+- `models/saved_player_record.py` — saved player schema
+- `routes/main.py` — A1/A2 routes and A3 saved-record CRUD routes
+- `services/balldontlie_service.py` — BALDONTLIE API retrieval and normalization
+- `services/basketball_reference_service.py` — defensive scraper for team context
+- `services/team_intelligence_service.py` — combined report generation
+- `templates/` and `static/` — server-rendered UI and stylesheet
+- `data/` — local fallback JSON and team catalog
+
+## Information Flow
 
 ```text
-User Team Selection
-    -> Flask Route Validation
-    -> BALDONTLIE API Service + Basketball-Reference Scraper
-    -> Data Cleaning and Normalization
-    -> Partial-Data/Error Handling
-    -> CourtVision Takeaway Generation
-    -> Team Intelligence Dashboard
+User selects player or creates a manual record
+  -> server-side validation
+  -> duplicate check and database constraints
+  -> MySQL commit for persisted records
+  -> saved-player list or detail page
 ```
 
-The route validates the selected abbreviation against `data/nba_teams.json`. Each external source runs independently. Either source can render when the other fails; if both fail, the page remains navigable and points users to the local Explore page.
-
-## Information Model
-
-- **Player:** local or external player identity, team, position, production, and physical fields.
-- **Team:** name, abbreviation, conference, division, and roster context.
-- **Game/Matchup:** future entity for dates, opponents, scores, and matchup context.
-- **ScoutingReport:** future explainable report containing observations and source status.
-- **Watchlist:** future user-saved player collection.
-- **ExternalDataSource:** source name, URL, status, and normalized records.
-- **TeamIntelligenceReport:** selected team, API data, scraped data, analysis, and errors.
-
-The A1 `data/players.json` file is local prototype information with 2024-25 production fields. BALDONTLIE records are externally acquired current-roster information. Basketball-Reference records are externally scraped team-context information. Assignment 3 is expected to add MySQL persistence for these concepts and historical data.
-
-## Environment Variables
-
-The application reads:
+For external API saves:
 
 ```text
-BALDONTLIE_API_KEY=your_api_key_here
+Team Intelligence page
+  -> BALDONTLIE active-player lookup
+  -> matching external player ID validation
+  -> duplicate detection with source + external_player_id
+  -> MySQL row inserted
+  -> record detail page with provenance
 ```
 
-Copy `.env.example` to `.env`, then add the actual key if one is available. On Windows PowerShell use `Copy-Item .env.example .env`, or create `.env` manually. `.env` is ignored by Git and must never be committed.
+## Current Features
 
-The application works in partial-data mode without a key. In that mode it skips the API request, keeps the homepage and A1 Explore page fully available, attempts the Basketball-Reference request, and displays a non-blocking configuration warning.
+- Homepage and existing A1/A2 navigation
+- Explore Players workflow using local JSON
+- Team Intelligence with API + scraping
+- MySQL-backed saved-player records
+- Saved-player search by name, team, and source
+- Create, view, edit, and delete saved records
+- Validation for missing input, invalid team abbreviations, invalid URLs, and duplicate imports
+- Graceful non-persistent mode when MySQL is not configured
 
 ## Installation Instructions
 
-```bash
-git clone <repository-url>
-cd project
-python3 -m venv .venv
-```
-
-Activate on macOS/Linux:
+1. Clone the repo and switch to the A3 branch:
 
 ```bash
-source .venv/bin/activate
+git checkout jesus-mariano-it401-a3
 ```
 
-Activate on Windows PowerShell:
+2. Create and activate a virtual environment:
+
+```bash
+python -m venv .venv
+```
+
+Windows PowerShell:
 
 ```powershell
 .venv\Scripts\Activate.ps1
 ```
 
-Install dependencies:
+3. Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Copy environment configuration:
+4. Create a `.env` file from the template:
 
 ```bash
-# macOS/Linux
-cp .env.example .env
-
-# Windows PowerShell
 Copy-Item .env.example .env
 ```
 
-Add a BALDONTLIE key to `.env` if available, then run:
+5. Add the required values in `.env`:
+
+```text
+BALDONTLIE_API_KEY=
+SECRET_KEY=replace-with-a-random-local-secret
+MYSQL_HOST=
+MYSQL_PORT=3306
+MYSQL_DATABASE=
+MYSQL_USER=
+MYSQL_PASSWORD=
+MYSQL_SSL_CA=
+```
+
+6. Create the MySQL database/schema in CI-Keys before initializing tables.
+
+7. Run the table-creation command:
+
+```bash
+flask --app app init-db
+```
+
+8. Start the app:
 
 ```bash
 python app.py
 ```
 
-Open `http://127.0.0.1:5000` and run tests with:
+9. Run the automated tests:
 
 ```bash
-pytest
+python -m pytest -q
 ```
 
-## Current Features
+## Environment Variables
 
-- A1 local JSON player exploration.
-- Player filtering by name, team, position, and minimum points per game.
-- Team Intelligence page with user-selected NBA team input.
-- BALDONTLIE API integration using `requests`.
-- Basketball-Reference scraping using `requests` and BeautifulSoup.
-- Cleaning and normalization into a unified report.
-- Deterministic, rules-based CourtVision Takeaway.
-- Partial-data mode without an API key.
-- Independent source statuses and friendly errors.
-- Automated tests with mocked external requests.
+- `BALDONTLIE_API_KEY` — API key used by the existing A2 team-intelligence API integration.
+- `SECRET_KEY` — required for CSRF protection and secure forms.
+- `MYSQL_HOST` — MySQL host or CI-Keys endpoint.
+- `MYSQL_PORT` — MySQL port, default `3306`.
+- `MYSQL_DATABASE` — schema name in the CI-Keys database.
+- `MYSQL_USER` — username with permission to create tables.
+- `MYSQL_PASSWORD` — MySQL password.
+- `MYSQL_SSL_CA` — optional CA file path if the hosting environment requires it.
+
+No secrets are committed to the repo.
 
 ## Error Handling
 
-Missing or blank API keys produce a controlled `not_configured` status and no API request. Empty or invalid team input is handled before any network call. API timeouts, request failures, authorization failures, rate limits, malformed JSON, and empty results receive source-specific statuses. Scraper timeouts, request failures, missing dependencies, changed selectors, and missing content are handled independently. Available data still renders when one source fails. When both sources fail, the dashboard shows a friendly fallback and links to Explore Players; it never displays credentials, raw JSON, HTML, stack traces, or Flask debug output to the user.
-
-## Ethical Considerations
-
-CourtVision attributes its public sources, keeps API keys in environment variables, respects rate limits, makes a small number of requests with short timeouts, and does not scrape authenticated or restricted content. This is an educational integration. External data may be delayed or incomplete and the rules-based Takeaway is not authoritative scouting advice, medical information, a betting recommendation, or a prediction.
-
-## Known Limitations
-
-- Freshness depends on external API and webpage availability.
-- BALDONTLIE capabilities can depend on account tier and credentials.
-- Basketball-Reference HTML structures can change.
-- Page content and season context can vary.
-- Roster differences may reflect transaction or update timing.
-- The Takeaway is rules-based, not predictive.
-- Assignment 2 has no database persistence, authentication, saved accounts, or live game tracking.
-- The local A1 player dataset remains intentionally small and static.
-- The active roster endpoint does not guarantee a completed 2026-27 season-statistics dataset; it provides current roster identity fields as available.
-
-## Refreshing API Players
-
-The project does not currently use a relational database. To fill a normalized local API cache for the Explore workflow, configure `BALDONTLIE_API_KEY` and run:
-
-```powershell
-python -m services.player_sync_service
-```
-
-The command follows API pagination and writes `data/api_players.json` with current active roster records, a retrieval timestamp, and `2026-27` roster context. It never overwrites `data/players.json`, so the A1 filters and production metrics remain available. The live Explore team selector also requests the selected team's current roster directly, so the sync command is a repeatable local snapshot rather than a requirement for viewing a selected team.
+- Missing MySQL configuration shows a non-sensitive configuration notice instead of silently spawning an in-memory database.
+- Invalid team abbreviations, blank names, blank descriptions, and invalid URLs are rejected with clear messages.
+- Duplicate BALDONTLIE imports are blocked and linked back to the saved record.
+- Manual duplicates are also blocked when the same manual record content is re-submitted.
+- API errors, missing keys, and scraper outages remain independent and user-friendly.
 
 ## Screenshots
 
+The repository includes static screenshots for the app's major UI states. These images are included here for a quick visual reference of the CourtVision workflow and the A3 saved-player experience.
 
-- Team Intelligence initial state: ![alt text](image-5.png)
-- API results: ![alt text](image-6.png)
+![CourtVision homepage](image.png)
+
+![Explore players page](image-1.png)
+
+![Team Intelligence page](image-2.png)
+
+![Saved Players list](image-3.png)
+
+![Saved player detail](image-4.png)
+
+![Create saved player record form](image-5.png)
+
+![Delete confirmation screen](image-6.png)
+
+Real screenshot verification is required when a student wants a fully evidenced submission. This repo does not claim screenshots for persistence verification beyond the code and tests shown here.
+
+## Design Decisions
+
+- MySQL persistence is used for the A3 requirement without replacing the existing server-rendered app.
+- The saved-player model is intentionally minimal and focused on the assignment requirement.
+- Current external API identity fields are treated as current roster identity, not season production metrics.
+- `retrieved_at` is nullable for manual records because no external acquisition occurred.
+- `jersey_number` remains a string to preserve values like `00`.
+- Duplicate detection uses source and external player ID for imported records.
+- Saving stays explicit; the app never auto-persists every live API response.
+
+## Known Limitations
+
+- This is a prototype without user authentication or multi-user ownership.
+- Database-backed pages require a valid MySQL configuration.
+- Search is intentionally lightweight and not a production-grade retrieval engine.
+- API freshness depends on external service availability and rate limits.
+- The assignment does not include automated migration tooling.
 
 ## Future Work
 
-Assignment 3 can add MySQL persistence for players, teams, games, reports, and watchlists; historical data and caching; refresh jobs and source adapters; player comparison and similarity; trend detection across games and seasons; matchup analysis; explainable scouting recommendations; user accounts; and saved watchlists.
+A4 could expand this into richer search, sorting, indexing, recommendation logic, and additional persistence for teams, games, and reports. For A3, the feature is intentionally focused on saved player records and CRUD.
 
 ## Project Structure
 
-- `app.py` - Flask factory and entry point.
-- `config.py` - application configuration and data directory.
-- `routes/main.py` - homepage, A1 Explore, and Team Intelligence routes.
-- `services/balldontlie_service.py` - API request and normalization logic.
-- `services/basketball_reference_service.py` - defensive public-page scraper.
-- `services/team_intelligence_service.py` - source combination and rules-based analysis.
-- `data/players.json` and `data/nba_teams.json` - local A1 data and team fallback catalog.
-- `templates/` and `static/` - shared Jinja layout and CourtVision styling.
-- `tests/` - local route and service tests with no live external requests.
+- `app.py` — app factory and Flask runtime
+- `config.py` — database and app config
+- `extensions.py` — SQLAlchemy instance
+- `models/` — database model definitions
+- `routes/main.py` — routes and validation logic
+- `services/` — external data services and team intelligence
+- `templates/` — Jinja templates for the app UI
+- `static/` — CSS and site assets
+- `tests/` — automated test coverage
+- `.env.example` — safe environment template
 
 ## Git Workflow
 
-The Assignment 2 branch is `jesus-mariano-it401-a2`. Review changes with:
+The assignment branch is:
 
 ```bash
-git status
-git diff --stat
-git diff
+git branch --show-current
 ```
 
-When ready to save the work:
+The project was created from the A2 branch and then developed on the A3 branch without overwriting unrelated work.
+
+## Manual CI-Keys Verification Checklist
+
+1. Confirm the MySQL schema exists in CI-Keys.
+2. Set the required `MYSQL_*` values in `.env`.
+3. Run `flask --app app init-db`.
+4. Start the app.
+5. Save an API-acquired player from Team Intelligence.
+6. Confirm it appears on the Saved Players page.
+7. Edit the record and confirm the update persists.
+8. Delete the record and confirm it is removed.
+9. Restart the Flask app and verify the record still persists if the database is configured and initialized.
+
+## Verification Status
+
+The workspace test suite passes with the A3 changes:
 
 ```bash
-git add .
-git commit -m "Extend CourtVision with team intelligence"
-git push -u origin jesus-mariano-it401-a2
+python -m pytest -q
 ```
 
-Do not commit `.env` or a real API key.
+Result: 21 passed.
+
+## Notes
+
+- Do not commit `.env` or any real database credentials.
+- `flask --app app init-db` creates tables; it is not a migration system.
+- The app remains server-rendered and uses Jinja2 templates.

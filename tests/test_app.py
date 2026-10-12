@@ -3,6 +3,7 @@ import re
 import pytest
 
 from app import create_app
+from models.saved_player_record import SavedPlayerRecord
 
 
 @pytest.fixture
@@ -11,6 +12,12 @@ def client():
     app.config["TESTING"] = True
     with app.test_client() as client:
         yield client
+
+
+def test_default_development_app_initializes_saved_player_table():
+    app = create_app("development")
+    with app.app_context():
+        assert SavedPlayerRecord.query.count() == 0
 
 
 def test_index(client):

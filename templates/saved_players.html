@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Saved Players | CourtVision{% endblock %}
+
+{% block content %}
+  <section class="page-shell">
+    <div class="container saved-layout">
+      <section class="filter-panel">
+        <h2>Saved player filters</h2>
+        <form method="get" action="{{ url_for('saved_players') }}" class="filter-form">
+          <div class="field-group">
+            <label for="search">Search by name</label>
+            <input id="search" name="search" type="text" value="{{ search or '' }}" placeholder="Search saved players">
+          </div>
+
+          <div class="field-group">
+            <label for="team">Team</label>
+            <select id="team" name="team">
+              <option value="">All teams</option>
+              {% for team in teams %}
+                <option value="{{ team }}" {% if selected_team == team %}selected{% endif %}>{{ team }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label for="source">Source</label>
+            <select id="source" name="source">
+              <option value="">All sources</option>
+              <option value="BALDONTLIE" {% if selected_source == 'BALDONTLIE' %}selected{% endif %}>BALDONTLIE</option>
+              <option value="Manual" {% if selected_source == 'Manual' %}selected{% endif %}>Manual</option>
+            </select>
+          </div>
+
+          <div class="button-row">
+            <button type="submit" class="primary-button">Apply filters</button>
+            <a href="{{ url_for('saved_players') }}" class="secondary-link">Reset</a>
+          </div>
+        </form>
+      </section>
+
+      <section class="results-panel">
+        <div class="results-header saved-header">
+          <div>
+            <p class="eyebrow">Persistent roster notes</p>
+            <h1>Saved Players</h1>
+          </div>
+          <a href="{{ url_for('create_saved_player') }}" class="primary-button">Create manual record</a>
+        </div>
+
+        {% if not database_ready %}
+          <div class="database-notice-box">
+            <strong>Database not configured.</strong>
+            <span>{{ database_status_message }}</span>
+          </div>
+        {% endif %}
+
+        {% if records %}
+          <div class="record-list saved-record-list">
+            {% for record in records %}
+              <article class="record-card saved-card">
+                <div class="record-card-head">
+                  <div>
+                    <h3>{{ record.name }}</h3>
+                    <p>{{ record.team_abbreviation or 'No team listed' }} • {{ record.position or 'Position not listed' }} • {{ record.source }}</p>
+                  </div>
+                  <span class="tag">{{ record.source }}</span>
+                </div>
+                <p class="saved-description">{{ record.description }}</p>
+                <div class="saved-meta">
+                  {% if record.retrieved_at %}<span>Retrieved {{ record.retrieved_at.strftime('%Y-%m-%d %H:%M UTC') }}</span>{% endif %}
+                  <span>Saved {{ record.created_at.strftime('%Y-%m-%d %H:%M UTC') if record.created_at else 'n/a' }}</span>
+                </div>
+                <div class="button-row small-row">
+                  <a href="{{ url_for('saved_player_detail', record_id=record.id) }}" class="secondary-link">View</a>
+                  <a href="{{ url_for('edit_saved_player', record_id=record.id) }}" class="secondary-link">Edit</a>
+                  <a href="{{ url_for('delete_saved_player', record_id=record.id) }}" class="danger-link">Delete</a>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <h3>No saved players yet.</h3>
+            <p>Use the Team Intelligence page to save a BALDONTLIE player or create a manual scouting record.</p>
+          </div>
+        {% endif %}
+      </section>
+    </div>
+  </section>
+{% endblock %}

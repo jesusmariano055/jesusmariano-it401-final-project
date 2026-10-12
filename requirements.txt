@@ -1,5 +1,9 @@
 Flask>=3.0
+Flask-SQLAlchemy>=3.1
+Flask-WTF>=1.2
+PyMySQL>=1.1
 requests>=2.31
 python-dotenv>=1.0
 beautifulsoup4>=4.12
 pytest>=8.0
+reportlab>=4.0

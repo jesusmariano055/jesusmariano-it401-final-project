@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Delete {{ record.name }} | CourtVision{% endblock %}
+
+{% block content %}
+  <section class="page-shell">
+    <div class="container form-shell narrow-form">
+      <div class="results-header saved-header">
+        <div>
+          <p class="eyebrow">Delete saved record</p>
+          <h1>Delete {{ record.name }}?</h1>
+        </div>
+      </div>
+
+      <div class="delete-panel">
+        <p>This action removes the saved player record permanently. This is a local delete of the saved record and does not change the original external source data.</p>
+        <form method="post" action="{{ url_for('delete_saved_player', record_id=record.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="button-row form-actions">
+            <button type="submit" class="danger-button">Confirm delete</button>
+            <a href="{{ url_for('saved_player_detail', record_id=record.id) }}" class="secondary-link">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+{% endblock %}

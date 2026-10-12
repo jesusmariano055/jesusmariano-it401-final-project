@@ -66,10 +66,32 @@
             <div class="panel-heading"><div><p class="eyebrow">Structured source · {{ report.api_data.roster_season }}</p><h2 id="api-title">Current API Roster</h2></div><span class="status status-{{ report.api_data.status|replace('_', '-') }}">{{ report.api_data.status|replace('_', ' ') }}</span></div>
             {% if report.api_data.players %}
               <div class="record-list">
-                {% for player in report.api_data.players %}<article class="record-card"><h3>{{ player.player_name or 'Unnamed player' }}</h3><p>{{ player.position }} · {{ player.team_abbreviation }}</p><dl><div><dt>Height</dt><dd>{{ player.height }}</dd></div><div><dt>Weight</dt><dd>{{ player.weight }}</dd></div><div><dt>Jersey</dt><dd>{{ player.jersey_number }}</dd></div></dl></article>{% endfor %}
+                {% for player in report.api_data.players %}
+                  <article class="record-card">
+                    <div class="record-card-head">
+                      <div>
+                        <h3>{{ player.player_name or 'Unnamed player' }}</h3>
+                        <p>{{ player.position }} · {{ player.team_abbreviation }}</p>
+                      </div>
+                      <form method="post" action="{{ url_for('import_saved_player') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="player_id" value="{{ player.player_id }}">
+                        <button type="submit" class="small-button">Save player</button>
+                      </form>
+                    </div>
+                    <dl>
+                      <div><dt>Height</dt><dd>{{ player.height }}</dd></div>
+                      <div><dt>Weight</dt><dd>{{ player.weight }}</dd></div>
+                      <div><dt>Jersey</dt><dd>{{ player.jersey_number }}</dd></div>
+                    </dl>
+                  </article>
+                {% endfor %}
               </div>
             {% else %}<p class="muted">{{ report.api_data.message }}</p>{% endif %}
             {% if report.api_data.source_url %}<a class="source-link" href="{{ report.api_data.source_url }}" target="_blank" rel="noopener">Source: BALDONTLIE API</a>{% endif %}
+            {% if not database_ready %}
+              <p class="database-notice">Saved-player persistence is disabled until your MySQL CI-Keys configuration is set.</p>
+            {% endif %}
           </section>
 
           <section class="data-panel" aria-labelledby="scraped-title">

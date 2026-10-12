@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}{{ record.name }} | CourtVision{% endblock %}
+
+{% block content %}
+  <section class="page-shell">
+    <div class="container detail-shell">
+      <div class="results-header saved-header">
+        <div>
+          <p class="eyebrow">Saved record detail</p>
+          <h1>{{ record.name }}</h1>
+        </div>
+        <div class="button-row">
+          <a href="{{ url_for('edit_saved_player', record_id=record.id) }}" class="secondary-link">Edit</a>
+          <a href="{{ url_for('delete_saved_player', record_id=record.id) }}" class="danger-link">Delete</a>
+        </div>
+      </div>
+
+      {% if not database_ready %}
+        <div class="database-notice-box">
+          <strong>Database not configured.</strong>
+          <span>{{ database_status_message }}</span>
+        </div>
+      {% endif %}
+
+      <article class="player-detail-panel">
+        <div class="detail-grid">
+          <div>
+            <p class="detail-field-label">Description</p>
+            <p>{{ record.description }}</p>
+          </div>
+          <div>
+            <p class="detail-field-label">Source</p>
+            <p>{{ record.source }}</p>
+          </div>
+          <div>
+            <p class="detail-field-label">Team</p>
+            <p>{{ record.team_name or record.team_abbreviation or 'Not listed' }}</p>
+          </div>
+          <div>
+            <p class="detail-field-label">Position</p>
+            <p>{{ record.position or 'Not listed' }}</p>
+          </div>
+          <div>
+            <p class="detail-field-label">Height</p>
+            <p>{{ record.height or 'Not listed' }}</p>
+          </div>
+          <div>
+            <p class="detail-field-label">Weight</p>
+            <p>{{ record.weight or 'Not listed' }}</p>
+          </div>
+          <div>
+            <p class="detail-field-label">Jersey</p>
+            <p>{{ record.jersey_number or 'Not listed' }}</p>
+          </div>
+          <div>
+            <p class="detail-field-label">Source URL</p>
+            <p>{% if record.source_url %}<a href="{{ record.source_url }}" target="_blank" rel="noopener">{{ record.source_url }}</a>{% else %}Not provided{% endif %}</p>
+          </div>
+          <div>
+            <p class="detail-field-label">Retrieved</p>
+            <p>{{ record.retrieved_at.strftime('%Y-%m-%d %H:%M UTC') if record.retrieved_at else 'Manual record; no external retrieval date.' }}</p>
+          </div>
+          <div>
+            <p class="detail-field-label">Created</p>
+            <p>{{ record.created_at.strftime('%Y-%m-%d %H:%M UTC') if record.created_at else 'n/a' }}</p>
+          </div>
+          <div>
+            <p class="detail-field-label">Updated</p>
+            <p>{{ record.updated_at.strftime('%Y-%m-%d %H:%M UTC') if record.updated_at else 'Not yet updated' }}</p>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+{% endblock %}

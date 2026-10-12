@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} | CourtVision{% endblock %}
+
+{% block content %}
+  <section class="page-shell">
+    <div class="container form-shell">
+      <div class="results-header saved-header">
+        <div>
+          <p class="eyebrow">Persistent record editor</p>
+          <h1>{{ title }}</h1>
+        </div>
+      </div>
+
+      {% if not database_ready %}
+        <div class="database-notice-box">
+          <strong>Database not configured.</strong>
+          <span>{{ database_status_message }}</span>
+        </div>
+      {% endif %}
+
+      {% if error_message %}
+        <div class="alert alert-error" role="alert">{{ error_message }}</div>
+      {% endif %}
+
+      <form method="post" action="{{ action_url }}" class="record-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="field-group">
+          <label for="name">Player name</label>
+          <input id="name" name="name" type="text" maxlength="150" value="{{ record.name if record else '' }}" required>
+        </div>
+
+        <div class="field-group">
+          <label for="description">Description or scouting note</label>
+          <textarea id="description" name="description" rows="5" required>{{ record.description if record else '' }}</textarea>
+        </div>
+
+        <div class="field-row">
+          <div class="field-group">
+            <label for="source">Source</label>
+            <input id="source" name="source" type="text" maxlength="60" value="{{ record.source if record else 'Manual' }}" {% if record %}readonly{% endif %}>
+          </div>
+          <div class="field-group">
+            <label for="source_url">Source URL</label>
+            <input id="source_url" name="source_url" type="url" value="{{ record.source_url or '' }}" placeholder="https://example.com">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-group">
+            <label for="team_abbreviation">Team abbreviation</label>
+            <input id="team_abbreviation" name="team_abbreviation" type="text" maxlength="20" value="{{ record.team_abbreviation or selected_team or '' }}" placeholder="NYK">
+          </div>
+          <div class="field-group">
+            <label for="position">Position</label>
+            <input id="position" name="position" type="text" maxlength="60" value="{{ record.position or '' }}" placeholder="Guard">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-group">
+            <label for="height">Height</label>
+            <input id="height" name="height" type="text" maxlength="40" value="{{ record.height or '' }}" placeholder="6-2">
+          </div>
+          <div class="field-group">
+            <label for="weight">Weight</label>
+            <input id="weight" name="weight" type="text" maxlength="40" value="{{ record.weight or '' }}" placeholder="200">
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label for="jersey_number">Jersey number</label>
+          <input id="jersey_number" name="jersey_number" type="text" maxlength="20" value="{{ record.jersey_number or '' }}" placeholder="00">
+        </div>
+
+        <div class="button-row form-actions">
+          <button type="submit" class="primary-button">{{ 'Save changes' if record else 'Create record' }}</button>
+          <a href="{{ url_for('saved_players') }}" class="secondary-link">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </section>
+{% endblock %}

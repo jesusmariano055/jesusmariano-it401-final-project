@@ -17,18 +17,28 @@
           <a href="{{ url_for('index') }}">Home</a>
           <a href="{{ url_for('explore') }}">Explore Players</a>
           <a href="{{ url_for('team_intelligence') }}">Team Intelligence</a>
+          <a href="{{ url_for('saved_players') }}">Saved Players</a>
         </div>
       </nav>
     </header>
 
     <main>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="container flash-stack">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}" role="alert">{{ message|safe }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
       {% block content %}{% endblock %}
     </main>
 
     <footer class="site-footer">
       <div class="container footer-inner">
         <span>Jesus Mariano</span>
-        <span>IT401 — Assignment 2</span>
+        <span>IT401 — Assignment 3</span>
         <span>{{ year }}</span>
       </div>
     </footer>

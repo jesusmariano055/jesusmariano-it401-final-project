@@ -32,22 +32,35 @@ def _build_mysql_database_url():
     )
 
 
+def _configured_mysql_url():
+    url = os.environ.get("DATABASE_URL", "").strip()
+    if url.startswith("mysql://"):
+        return url.replace("mysql://", "mysql+pymysql://", 1)
+    if url.startswith("mysql+pymysql://"):
+        return url
+    return None
+
+
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "courtvision-local-dev-secret")
     DATA_DIR = os.path.join(BASE_DIR, "data")
     API_KEY = os.environ.get("BALDONTLIE_API_KEY")
     AI_SERVICE_API_KEY = os.environ.get("AI_SERVICE_API_KEY")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    DEFAULT_SQLITE_DATABASE_URI = f"sqlite:///{os.path.join(BASE_DIR, 'courtvision.db')}"
+    DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+    MYSQL_DATABASE_URL = _build_mysql_database_url()
+    CONFIGURED_MYSQL_URL = _configured_mysql_url()
+    DISABLED_DATABASE_URI = "sqlite:///:memory:"
     SQLALCHEMY_DATABASE_URI = (
-        _build_mysql_database_url()
-        or os.environ.get("DATABASE_URL")
-        or DEFAULT_SQLITE_DATABASE_URI
+        MYSQL_DATABASE_URL
+        or CONFIGURED_MYSQL_URL
+        or DISABLED_DATABASE_URI
     )
-    DATABASE_ENABLED = bool(
-        _build_mysql_database_url() or os.environ.get("DATABASE_URL") or DEFAULT_SQLITE_DATABASE_URI
+    DATABASE_ENABLED = bool(MYSQL_DATABASE_URL or CONFIGURED_MYSQL_URL)
+    DATABASE_STATUS_MESSAGE = (
+        "Saved-player features require a configured database. Set MYSQL_* variables "
+        "to enable persistence; Explore and Team Intelligence remain available."
     )
-    DATABASE_STATUS_MESSAGE = "Using the local SQLite database. Set MYSQL_* environment variables to switch to MySQL persistence."
 
 
 class DevelopmentConfig(Config):

@@ -3,21 +3,27 @@ import re
 import pytest
 
 from app import create_app
-from models.saved_player_record import SavedPlayerRecord
 
 
 @pytest.fixture
 def client():
-    app = create_app("development")
+    app = create_app("testing")
     app.config["TESTING"] = True
+    with app.app_context():
+        from extensions import db
+
+        db.create_all()
     with app.test_client() as client:
         yield client
 
 
-def test_default_development_app_initializes_saved_player_table():
+def test_search_reports_database_unavailable_without_connecting():
     app = create_app("development")
-    with app.app_context():
-        assert SavedPlayerRecord.query.count() == 0
+    app.config["DATABASE_ENABLED"] = False
+    with app.test_client() as client:
+        response = client.get("/search?q=guard")
+    assert response.status_code == 503
+    assert "requires MySQL configuration" in response.get_data(as_text=True)
 
 
 def test_index(client):

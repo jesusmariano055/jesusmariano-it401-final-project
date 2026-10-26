@@ -46,6 +46,7 @@
             <h1>Saved Players</h1>
           </div>
           <a href="{{ url_for('create_saved_player') }}" class="primary-button">Create manual record</a>
+          <a href="{{ url_for('search') }}" class="secondary-link">Search saved records</a>
         </div>
 
         {% if not database_ready %}
@@ -53,6 +54,9 @@
             <strong>Database not configured.</strong>
             <span>{{ database_status_message }}</span>
           </div>
+        {% endif %}
+        {% if database_error %}
+          <div class="alert alert-error" role="alert">{{ database_error }}</div>
         {% endif %}
 
         {% if records %}

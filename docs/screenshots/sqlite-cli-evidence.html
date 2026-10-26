@@ -1,0 +1,34 @@
+<!doctype html><html lang='en'><meta charset='utf-8'><title>SQLite test CLI evidence</title><style>body{font:16px Segoe UI,Arial,sans-serif;background:#eef3fb;color:#162235;margin:3rem}main{max-width:1000px;margin:auto;background:white;padding:2rem;border-radius:16px}h1{color:#101b2d}p{color:#415272}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f6fb;border:1px solid #d5dfea;border-radius:10px;padding:1rem;line-height:1.5}</style><main><h1>CourtVision A4 ? Test CLI output</h1><p>Actual Flask CLI command outputs using TestingConfig and an isolated in-memory SQLite database. This is not MySQL integration evidence.</p><pre>$ flask --app app init-db (TestingConfig / isolated in-memory SQLite)
+Initialized CourtVision application tables.
+exit_code=0
+
+$ flask --app app seed-search-evaluation --confirm (TestingConfig / isolated in-memory SQLite)
+Inserted 18 synthetic/manual records; skipped 0 existing fixtures.
+exit_code=0
+initial search: HTTP 200; expected_text=True
+exact name/ranking: HTTP 200; expected_text=True
+team and source filters: HTTP 200; expected_text=True
+pagination page 1: HTTP 200; expected_text=True
+pagination page 2: HTTP 200; expected_text=True
+no results: HTTP 200; expected_text=True
+
+$ flask --app app evaluate-search (TestingConfig / isolated in-memory SQLite)
+Exact name: query=&#x27;synthetic player atlas&#x27;, expected=[&#x27;Synthetic Player Atlas&#x27;], actual=[&#x27;Synthetic Player Atlas&#x27;], precision=1.000, recall=1.000
+Partial name: query=&#x27;player at&#x27;, expected=[&#x27;Synthetic Player Atlas&#x27;], actual=[&#x27;Synthetic Player Atlas&#x27;], precision=1.000, recall=1.000
+Scouting concept: query=&#x27;perimeter defense&#x27;, expected=[&#x27;Synthetic Player Atlas&#x27;, &#x27;Synthetic Player Harbor&#x27;, &#x27;Synthetic Player Ion&#x27;, &#x27;Synthetic Player Prairie&#x27;], actual=[&#x27;Synthetic Player Atlas&#x27;, &#x27;Synthetic Player Harbor&#x27;, &#x27;Synthetic Player Ion&#x27;, &#x27;Synthetic Player Prairie&#x27;], precision=1.000, recall=1.000
+Keyword and filters: query=&#x27;playmaking&#x27;, expected=[&#x27;Synthetic Player Fable&#x27;, &#x27;Synthetic Player Lumen&#x27;], actual=[&#x27;Synthetic Player Fable&#x27;, &#x27;Synthetic Player Lumen&#x27;], precision=1.000, recall=1.000
+No match: query=&#x27;unicorn defense system&#x27;, expected=[], actual=[], precision=N/A, recall=N/A
+Synonym limitation: query=&#x27;rim pressure&#x27;, expected=[&#x27;Synthetic Player Nova&#x27;], actual=[], precision=N/A, recall=0.000
+exit_code=0
+
+$ flask --app app search-stats (TestingConfig / isolated in-memory SQLite)
+Search events: 5
+Zero-result events: 1
+Recent searches:
+2026-10-26T05:51:12.964988 | &#x27;unicorn defense system&#x27; | results=0 returned=0 page=1
+2026-10-26T05:51:12.798499 | &#x27;synthetic player&#x27; | results=18 returned=8 page=2
+2026-10-26T05:51:12.752273 | &#x27;synthetic player&#x27; | results=18 returned=10 page=1
+2026-10-26T05:51:12.617265 | &#x27;playmaking&#x27; | results=2 returned=2 page=1
+2026-10-26T05:51:12.295110 | &#x27;synthetic player atlas&#x27; | results=1 returned=1 page=1
+exit_code=0
+</pre></main></html>

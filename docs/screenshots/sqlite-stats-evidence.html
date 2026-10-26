@@ -1,0 +1,10 @@
+<!doctype html><html lang='en'><meta charset='utf-8'><title>SQLite telemetry CLI evidence</title><style>body{font:17px Segoe UI,Arial,sans-serif;background:#eef3fb;color:#162235;margin:3rem}main{max-width:1000px;margin:auto;background:white;padding:2rem;border-radius:16px}h1{color:#101b2d}p{color:#415272}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f6fb;border:1px solid #d5dfea;border-radius:10px;padding:1rem;line-height:1.6}</style><main><h1>CourtVision A4 — Search telemetry</h1><p>Actual Flask command output from TestingConfig with an isolated in-memory SQLite database. Not MySQL integration evidence.</p><pre>$ flask --app app search-stats(TestingConfig / isolated in-memory SQLite)
+Search events: 5
+Zero-result events: 1
+Recent searches:
+2026-10-26T05:51:12.964988 | &#x27;unicorn defense system&#x27; | results=0 returned=0 page=1
+2026-10-26T05:51:12.798499 | &#x27;synthetic player&#x27; | results=18 returned=8 page=2
+2026-10-26T05:51:12.752273 | &#x27;synthetic player&#x27; | results=18 returned=10 page=1
+2026-10-26T05:51:12.617265 | &#x27;playmaking&#x27; | results=2 returned=2 page=1
+2026-10-26T05:51:12.295110 | &#x27;synthetic player atlas&#x27; | results=1 returned=1 page=1
+exit_code=0</pre></main></html>

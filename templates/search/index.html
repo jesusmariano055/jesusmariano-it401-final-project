@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Search Saved Players | CourtVision{% endblock %}
+
+{% block content %}
+  <section class="page-shell">
+    <div class="container search-shell">
+      <div class="results-header">
+        <div>
+          <p class="eyebrow">Saved-record retrieval</p>
+          <h1>Search CourtVision</h1>
+          <p class="description">Search saved player names and scouting notes. Search uses saved records only; it does not call external services.</p>
+        </div>
+      </div>
+
+      {% if not database_ready %}
+        <div class="database-notice-box" role="status">
+          <strong>Database not configured.</strong>
+          <span>{{ database_status_message }}</span>
+        </div>
+      {% endif %}
+
+      {% if error_message %}
+        <div class="alert alert-error" role="alert">{{ error_message }}</div>
+      {% endif %}
+
+      <section class="filter-panel search-panel" aria-labelledby="search-controls-heading">
+        <h2 id="search-controls-heading">Search saved player records</h2>
+        <form method="get" action="{{ url_for('search') }}" class="search-form">
+          <div class="field-group">
+            <label for="q">Keyword or phrase</label>
+            <input id="q" name="q" type="search" maxlength="200" value="{{ query }}" placeholder="e.g. point guard">
+          </div>
+          <div class="search-filter-grid">
+            <div class="field-group">
+              <label for="team">Team</label>
+              <select id="team" name="team">
+                <option value="">All teams</option>
+                {% for team_choice in team_choices %}
+                  <option value="{{ team_choice }}" {% if team == team_choice %}selected{% endif %}>{{ team_choice }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="source">Source</label>
+              <select id="source" name="source">
+                <option value="">All sources</option>
+                {% for source_choice in source_choices %}
+                  <option value="{{ source_choice }}" {% if source == source_choice %}selected{% endif %}>{{ source_choice }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="sort">Sort results</label>
+              <select id="sort" name="sort">
+                <option value="relevance" {% if sort == 'relevance' %}selected{% endif %}>Relevance</option>
+                <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest saved</option>
+                <option value="alphabetical" {% if sort == 'alphabetical' %}selected{% endif %}>Alphabetical</option>
+              </select>
+            </div>
+          </div>
+          <div class="button-row">
+            <button type="submit" class="primary-button">Search</button>
+            <a href="{{ url_for('search') }}" class="secondary-link">Clear</a>
+          </div>
+        </form>
+      </section>
+
+      {% if search_page %}
+        <section class="search-results" aria-live="polite" aria-labelledby="search-results-heading">
+          <div class="results-header search-results-header">
+            <div>
+              <h2 id="search-results-heading">Search results</h2>
+              {% if search_page.total_results %}
+                <p class="muted">
+                  {{ search_page.total_results }} saved record{% if search_page.total_results != 1 %}s{% endif %}
+                  found for “{{ query }}”.
+                  Showing {{ (search_page.page_number - 1) * search_page.page_size + 1 }}–{{ (search_page.page_number - 1) * search_page.page_size + results|length }}
+                  of {{ search_page.total_results }} results.
+                </p>
+              {% else %}
+                <p class="muted">No matching records were found. Try a broader term or remove a filter.</p>
+              {% endif %}
+            </div>
+            {% if search_page.total_results %}
+              <span class="result-count">Page {{ search_page.page_number }} of {{ search_page.total_pages }}</span>
+            {% endif %}
+          </div>
+
+          {% if results %}
+            <div class="search-result-list">
+              {% for item in results %}
+                {% set record = item.record %}
+                <article class="record-card search-result-card">
+                  <div class="record-card-head">
+                    <div>
+                      <h3><a href="{{ url_for('saved_player_detail', record_id=record.id) }}">{{ record.name }}</a></h3>
+                      <p>{{ record.team_abbreviation or 'Not provided' }} · {{ record.position or 'Not provided' }} · {{ record.source or 'Not provided' }}</p>
+                    </div>
+                    <span class="tag">{{ item.reason }}</span>
+                  </div>
+                  <p class="saved-description">{{ item.excerpt }}{% if record.description and record.description|length > 240 %}…{% endif %}</p>
+                  <div class="saved-meta">
+                    <span>Team: {{ record.team_name or record.team_abbreviation or 'Not provided' }}</span>
+                    <span>Saved {{ record.created_at.strftime('%Y-%m-%d %H:%M UTC') if record.created_at else 'Not provided' }}</span>
+                    <span>{% if record.retrieved_at %}Retrieved {{ record.retrieved_at.strftime('%Y-%m-%d %H:%M UTC') }}{% elif record.source == 'Manual' %}No external retrieval date{% else %}Retrieval date not provided{% endif %}</span>
+                  </div>
+                </article>
+              {% endfor %}
+            </div>
+
+            <nav class="search-pagination" aria-label="Search result pages">
+              {% if search_page.page_number > 1 %}
+                <a class="secondary-link" rel="prev" href="{{ url_for('search', q=query, team=team, source=source, sort=sort, page=search_page.page_number - 1) }}">Previous</a>
+              {% else %}
+                <span class="secondary-link is-disabled" aria-disabled="true">Previous</span>
+              {% endif %}
+              <span>Page {{ search_page.page_number }} of {{ search_page.total_pages }}</span>
+              {% if search_page.page_number < search_page.total_pages %}
+                <a class="secondary-link" rel="next" href="{{ url_for('search', q=query, team=team, source=source, sort=sort, page=search_page.page_number + 1) }}">Next</a>
+              {% else %}
+                <span class="secondary-link is-disabled" aria-disabled="true">Next</span>
+              {% endif %}
+            </nav>
+          {% endif %}
+        </section>
+      {% elif not did_search and not error_message %}
+        <div class="empty-state">
+          <h2>Enter a keyword to begin.</h2>
+          <p>Search saved player names and scouting notes, then narrow the results by team or source.</p>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

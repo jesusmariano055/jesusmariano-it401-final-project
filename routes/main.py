@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from flask import flash, redirect, render_template, request, url_for
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from extensions import db
 from models.saved_player_record import SavedPlayerRecord
@@ -149,16 +149,25 @@ def register_routes(app):
         search = request.args.get("search", "").strip()
         team = request.args.get("team", "").strip().upper()
         source = request.args.get("source", "").strip()
-        query = SavedPlayerRecord.query
-
-        if search:
-            query = query.filter(SavedPlayerRecord.name.ilike(f"%{search}%"))
-        if team:
-            query = query.filter(SavedPlayerRecord.team_abbreviation == team)
-        if source:
-            query = query.filter(SavedPlayerRecord.source == source)
-
-        records = query.order_by(SavedPlayerRecord.created_at.desc()).all()
+        records = []
+        database_error = None
+        if _database_ready(app):
+            query = SavedPlayerRecord.query
+            if search:
+                query = query.filter(SavedPlayerRecord.name.ilike(f"%{search}%"))
+            if team:
+                query = query.filter(SavedPlayerRecord.team_abbreviation == team)
+            if source:
+                query = query.filter(SavedPlayerRecord.source == source)
+            try:
+                records = query.order_by(SavedPlayerRecord.created_at.desc()).all()
+            except SQLAlchemyError as exc:
+                db.session.rollback()
+                app.logger.error(
+                    "Saved-player list query failed (%s).",
+                    type(exc).__name__,
+                )
+                database_error = "Saved players are temporarily unavailable."
         teams = sorted(
             {record.team_abbreviation for record in records if record.team_abbreviation},
             key=lambda value: (value or ""),
@@ -174,6 +183,7 @@ def register_routes(app):
             year=_current_year(),
             database_ready=_database_ready(app),
             database_status_message=app.config.get("DATABASE_STATUS_MESSAGE"),
+            database_error=database_error,
         )
 
     @app.route("/saved-players/new", methods=["GET", "POST"])

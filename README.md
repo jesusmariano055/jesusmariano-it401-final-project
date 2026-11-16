@@ -192,13 +192,10 @@ The generated `docs/CourtVision_A4_Report.pdf` is labeled a **draft** and embeds
 
 ## Git workflow
 
-Current task branch: `jesus-mariano-it401-a4`, based on the available A3 branch. Review and commit manually:
+Current task branch: `jesus-mariano-it401-a5`, based on `jesus-mariano-it401-a4`. The A5 summary and recommendation changes are committed locally. Review and push the branch with:
 
 ```powershell
 git status
-git diff --check
-git diff
-git add README.md app.py config.py models routes services templates static tests docs scripts
-git commit -m "Add A4 saved-player search and evaluation"
-git push -u origin jesus-mariano-it401-a4
+git diff origin/jesus-mariano-it401-a4...HEAD
+git push -u origin jesus-mariano-it401-a5
 ```

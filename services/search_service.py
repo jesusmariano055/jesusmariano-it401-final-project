@@ -41,7 +41,12 @@ def normalize_query(query):
 
 
 def escape_like(value):
-    return value.replace("!", "!!").replace("%", "!%").replace("_", "!_")
+    return (
+        value.replace("!", "!!")
+        .replace("\\", "!\\")
+        .replace("%", "!%")
+        .replace("_", "!_")
+    )
 
 
 def _contains(expression, escaped_pattern):

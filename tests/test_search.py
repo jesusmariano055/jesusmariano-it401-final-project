@@ -7,7 +7,12 @@ from app import create_app
 from extensions import db
 from models.saved_player_record import SavedPlayerRecord
 from models.search_event import SearchEvent
-from services.search_service import SearchInputError, normalize_query, search_saved_players
+from services.search_service import (
+    SearchInputError,
+    escape_like,
+    normalize_query,
+    search_saved_players,
+)
 from services.search_evaluation import evaluate_search_cases, seed_evaluation_records
 
 
@@ -72,6 +77,10 @@ def test_search_matches_name_or_description_case_insensitively_and_literal_like_
         assert [r.name for r in search_saved_players("' or 1=1 --").records] == [
             "Quoted Player"
         ]
+
+
+def test_escape_like_escapes_sql_wildcards_and_backslashes():
+    assert escape_like(r"100\%_!") == r"100!\!%!_!!"
 
 
 def test_relevance_weights_and_stable_ties(client):

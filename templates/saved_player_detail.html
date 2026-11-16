@@ -24,6 +24,24 @@
       {% endif %}
 
       <article class="player-detail-panel">
+        {% if ai_summary %}
+          <div class="detail-section">
+            <p class="detail-field-label">AI summary</p>
+            <p>{{ ai_summary }}</p>
+          </div>
+        {% endif %}
+
+        {% if ai_suggestions %}
+          <div class="detail-section">
+            <p class="detail-field-label">Suggested searches</p>
+            <ul>
+              {% for suggestion in ai_suggestions %}
+                <li><a href="{{ url_for('search', q=suggestion) }}">{{ suggestion }}</a></li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+
         <div class="detail-grid">
           <div>
             <p class="detail-field-label">Description</p>

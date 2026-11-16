@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from extensions import db
 from models.saved_player_record import SavedPlayerRecord
+from services.ai_service import AiService, suggest_related_queries, summarize_player_record
 from services.balldontlie_service import ACTIVE_PLAYERS_URL, get_active_players
 from services.team_intelligence_service import build_report
 
@@ -349,9 +350,24 @@ def register_routes(app):
     @app.route("/saved-players/<int:record_id>")
     def saved_player_detail(record_id):
         record = SavedPlayerRecord.query.get_or_404(record_id)
+        ai_service = AiService(api_key=app.config.get("AI_SERVICE_API_KEY"))
+        summary = summarize_player_record(record)
+        suggestions = suggest_related_queries(
+            record,
+            SavedPlayerRecord.query.filter(SavedPlayerRecord.id != record.id).limit(10).all(),
+        )
+        if app.config.get("AI_SERVICE_API_KEY"):
+            prompt = (
+                f"Summarize this player record in a factual, concise 2-3 sentence style. "
+                f"Name: {record.name}. Team: {record.team_name or record.team_abbreviation or 'Not listed'}. "
+                f"Position: {record.position or 'Not listed'}. Description: {record.description or 'No description provided.'}"
+            )
+            summary = ai_service.generate(prompt)
         return render_template(
             "saved_player_detail.html",
             record=record,
+            ai_summary=summary,
+            ai_suggestions=suggestions,
             year=_current_year(),
             database_ready=_database_ready(app),
             database_status_message=app.config.get("DATABASE_STATUS_MESSAGE"),

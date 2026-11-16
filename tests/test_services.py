@@ -1,5 +1,7 @@
+from models.saved_player_record import SavedPlayerRecord
 from services import balldontlie_service
 from services import player_sync_service, team_intelligence_service
+from services.ai_service import suggest_related_queries, summarize_player_record
 
 
 def test_api_skips_request_without_key(monkeypatch):
@@ -89,3 +91,33 @@ def test_combined_report_keeps_api_data_when_scraper_fails(monkeypatch):
     report = team_intelligence_service.build_report({"name": "Test Team", "abbreviation": "TST", "conference": "West", "division": "Pacific"})
     assert report["analysis"]["api_player_count"] == 1
     assert report["errors"][0]["source"] == "Scraper"
+
+
+def test_ai_summary_is_grounded_in_record_fields():
+    record = SavedPlayerRecord(
+        name="Jalen Brunson",
+        description="Pick-and-roll creator with elite pace and quick decision making.",
+        source="Manual",
+        team_abbreviation="NYK",
+        position="Guard",
+        height="6-2",
+        weight="190",
+    )
+    summary = summarize_player_record(record)
+    assert "Jalen Brunson" in summary
+    assert "NYK" in summary
+    assert "Pick-and-roll creator" in summary
+
+
+def test_ai_suggestions_include_team_and_role_terms():
+    record = SavedPlayerRecord(
+        name="Jalen Brunson",
+        description="Pick-and-roll creator with elite pace and quick decision making.",
+        source="Manual",
+        team_abbreviation="NYK",
+        position="Guard",
+    )
+    suggestions = suggest_related_queries(record, [], limit=3)
+    assert suggestions
+    combined = " ".join(suggestions).lower()
+    assert "nyk" in combined or "guard" in combined or "playmaking" in combined

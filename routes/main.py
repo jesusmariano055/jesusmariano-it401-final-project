@@ -7,7 +7,12 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from extensions import db
 from models.saved_player_record import SavedPlayerRecord
-from services.ai_service import AiService, suggest_related_queries, summarize_player_record
+from services.ai_service import (
+    AiService,
+    recommend_related_players,
+    suggest_related_queries,
+    summarize_player_record,
+)
 from services.balldontlie_service import ACTIVE_PLAYERS_URL, get_active_players
 from services.team_intelligence_service import build_report
 
@@ -352,10 +357,9 @@ def register_routes(app):
         record = SavedPlayerRecord.query.get_or_404(record_id)
         ai_service = AiService(api_key=app.config.get("AI_SERVICE_API_KEY"))
         summary = summarize_player_record(record)
-        suggestions = suggest_related_queries(
-            record,
-            SavedPlayerRecord.query.filter(SavedPlayerRecord.id != record.id).limit(10).all(),
-        )
+        related_records = SavedPlayerRecord.query.filter(SavedPlayerRecord.id != record.id).limit(10).all()
+        suggestions = suggest_related_queries(record, related_records)
+        recommendations = recommend_related_players(record, related_records)
         if app.config.get("AI_SERVICE_API_KEY"):
             prompt = (
                 f"Summarize this player record in a factual, concise 2-3 sentence style. "
@@ -368,6 +372,7 @@ def register_routes(app):
             record=record,
             ai_summary=summary,
             ai_suggestions=suggestions,
+            ai_recommendations=recommendations,
             year=_current_year(),
             database_ready=_database_ready(app),
             database_status_message=app.config.get("DATABASE_STATUS_MESSAGE"),

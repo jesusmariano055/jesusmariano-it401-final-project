@@ -42,6 +42,20 @@
           </div>
         {% endif %}
 
+        {% if ai_recommendations %}
+          <div class="detail-section">
+            <p class="detail-field-label">Recommended players</p>
+            <ul>
+              {% for item in ai_recommendations %}
+                <li>
+                  <a href="{{ url_for('saved_player_detail', record_id=item.record.id) }}">{{ item.record.name }}</a>
+                  <span> — {{ item.reason }}</span>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+
         <div class="detail-grid">
           <div>
             <p class="detail-field-label">Description</p>

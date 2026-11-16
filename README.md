@@ -172,9 +172,11 @@ Blank/overlong queries, unknown team/source values, invalid sorts, and invalid p
 
 Search is phrase-substring matching with rule-based ranking. It has no semantic understanding, synonyms, stemming, personalization, or authentication. Phrase order and punctuation matter; singular/plural variations may not match. MySQL collation affects database sorting and language-specific details. Leading-wildcard LIKE may not scale. Saved records can become stale, and this prototype does not provide multi-user ownership.
 
-## Future work — A5
+## A5 additions
 
-Possible later work includes summaries grounded in retrieved records, explainable recommendations, query suggestions, and (if justified) optional semantic retrieval. Personalization would require an appropriate privacy and access-control design. None of those capabilities, LLMs, embeddings, or recommendation systems is implemented in A4.
+The A5 branch adds grounded player summaries and explainable recommendation helpers for saved records. A saved-player detail view now shows a compact AI-style summary based on the saved record fields, plus related-query suggestions and explainable player recommendations when similar records share team, role, or contextual vocabulary. A remote model can be used when `AI_SERVICE_API_KEY` and `AI_SERVICE_ENDPOINT` are configured, and the application falls back to a deterministic local summary when they are not.
+
+The design remains privacy-conscious: it only uses local record fields already stored in the database and does not add personal data, session IDs, or external tracking. Optional semantic retrieval and deeper personalization would require a separate privacy and access-control design.
 
 ## Evaluation and PDF evidence status
 

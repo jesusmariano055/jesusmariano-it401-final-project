@@ -1,7 +1,11 @@
 from models.saved_player_record import SavedPlayerRecord
 from services import balldontlie_service
 from services import player_sync_service, team_intelligence_service
-from services.ai_service import suggest_related_queries, summarize_player_record
+from services.ai_service import (
+    recommend_related_players,
+    suggest_related_queries,
+    summarize_player_record,
+)
 
 
 def test_api_skips_request_without_key(monkeypatch):
@@ -121,3 +125,26 @@ def test_ai_suggestions_include_team_and_role_terms():
     assert suggestions
     combined = " ".join(suggestions).lower()
     assert "nyk" in combined or "guard" in combined or "playmaking" in combined
+
+
+def test_recommend_related_players_uses_explainable_shared_context():
+    base = SavedPlayerRecord(
+        id=1,
+        name="Jalen Brunson",
+        description="Pick-and-roll creator with elite pace and quick decision making.",
+        source="Manual",
+        team_abbreviation="NYK",
+        position="Guard",
+    )
+    match = SavedPlayerRecord(
+        id=2,
+        name="A guard with elite pace",
+        description="Creates advantages through pick-and-roll playmaking.",
+        source="Manual",
+        team_abbreviation="NYK",
+        position="Guard",
+    )
+    recommendations = recommend_related_players(base, [match], limit=3)
+    assert recommendations
+    assert recommendations[0]["record"].id == 2
+    assert "same team" in recommendations[0]["reason"] or "same position" in recommendations[0]["reason"]

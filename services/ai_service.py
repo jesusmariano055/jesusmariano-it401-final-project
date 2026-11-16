@@ -131,3 +131,48 @@ def suggest_related_queries(record, other_records=None, limit=3):
                 break
 
     return suggestions[:limit]
+
+
+def recommend_related_players(record, other_records=None, limit=3):
+    if record is None:
+        return []
+
+    candidates = []
+    other_records = other_records or []
+    for candidate in other_records:
+        if candidate.id == record.id:
+            continue
+        score = 0
+        reasons = []
+
+        if record.team_abbreviation and candidate.team_abbreviation == record.team_abbreviation:
+            score += 4
+            reasons.append(f"same team ({record.team_abbreviation})")
+        elif record.team_name and candidate.team_name == record.team_name:
+            score += 3
+            reasons.append(f"same club ({record.team_name})")
+
+        if record.position and candidate.position and record.position.lower() == candidate.position.lower():
+            score += 3
+            reasons.append(f"same position ({record.position})")
+
+        if record.source and candidate.source == record.source:
+            score += 2
+            reasons.append(f"same source ({record.source})")
+
+        shared_tokens = set(_normalize_keywords(f"{record.name} {record.description}")) & set(
+            _normalize_keywords(f"{candidate.name} {candidate.description}")
+        )
+        if shared_tokens:
+            score += min(len(shared_tokens), 3)
+            reasons.append(f"shared context: {', '.join(sorted(shared_tokens)[:2])}")
+
+        if score > 0:
+            candidates.append({
+                "record": candidate,
+                "score": score,
+                "reason": "; ".join(reasons[:3]),
+            })
+
+    candidates.sort(key=lambda item: (-item["score"], item["record"].name.lower(), item["record"].id))
+    return candidates[:limit]
